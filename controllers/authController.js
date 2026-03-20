@@ -1,3 +1,5 @@
+import { Model } from "mongoose";
+
 const login = (req, res) => {
   res.send("This is the login function");
 };
