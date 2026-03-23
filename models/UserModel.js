@@ -1,7 +1,6 @@
-import mongoose from "mongoose";
-const { Schema } = mongoose;
+import { Schema, model } from "mongoose";
 
-const User = new Schema({
+const userSchema = new Schema({
   name: {
     type: String,
     required: [true, "Please provide a name."],
@@ -21,3 +20,9 @@ const User = new Schema({
     minLength: [4, "Password length must be at least 4 characters"],
   },
 });
+
+userSchema.pre("save", function () {
+  console.log("hello world");
+});
+
+export const User = model("User", userSchema);
