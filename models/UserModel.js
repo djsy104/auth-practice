@@ -1,6 +1,8 @@
 import { Schema, model } from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const userSchema = new Schema({
+const UserSchema = new Schema({
   name: {
     type: String,
     required: [true, "Please provide a name."],
@@ -21,8 +23,24 @@ const userSchema = new Schema({
   },
 });
 
-userSchema.pre("save", function () {
-  console.log("hello world");
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
-export const User = model("User", userSchema);
+UserSchema.method.createJWT = function () {
+  return jwt.sign(
+    { userId: this._id, name: this.name },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "3d",
+    },
+  );
+};
+
+UserSchema.method.comparePasswords = async function (inputPassword) {
+  return bcrypt.compare(inputPassword, this.password);
+};
+
+export const User = model("User", UserSchema);
