@@ -1,41 +1,62 @@
 import { User } from "../models/UserModel.js";
 
-export const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email) {
-    throw new Error("Please provide an email");
-  }
-
-  if (!password) {
-    throw new Error("Please provide a password");
-  }
-
-  const currentUser = await User.findOne({ email, password });
-
-  if (!currentUser) {
-    throw new Error("Could not find account. Please check credentials.");
-  }
-
-  return res.status(200).json(currentUser);
-};
-
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name) {
-    throw new Error("Please provide a name");
+    return res.status(401).json({ error: "Please provide a name" });
   }
 
   if (!email) {
-    throw new Error("Please provide an email");
+    return res.status(401).json({ error: "Please provide an email" });
   }
 
   if (!password) {
-    throw new Error("Please provide a password");
+    return res.status(401).json({ error: "Please provide a password" });
+  }
+
+  const currentUser = await User.findOne({ email });
+
+  if (currentUser) {
+    return res
+      .status(401)
+      .json({ error: "There is already an account with that email" });
   }
 
   const createdUser = await User.create({ name, email, password });
+  const token = createdUser.createJWT();
 
-  res.status(200).json(createdUser);
+  res.status(200).json({ user: createdUser, token: token });
+};
+
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email) {
+    return res.status(401).json({ error: "Please provide an email" });
+  }
+
+  if (!password) {
+    return res.status(401).json({ error: "Please provide a password" });
+  }
+
+  const currentUser = await User.findOne({ email });
+
+  if (!currentUser) {
+    return res
+      .status(401)
+      .json({ error: "Could not find account. Please try a different email." });
+  }
+
+  const userPassword = await currentUser.comparePasswords(password);
+
+  if (!userPassword) {
+    return res
+      .status(401)
+      .json({ error: "Incorrect password. Did you enter the correct one?" });
+  }
+
+  const token = currentUser.createJWT();
+
+  res.status(200).json({ user: currentUser, token: token });
 };
